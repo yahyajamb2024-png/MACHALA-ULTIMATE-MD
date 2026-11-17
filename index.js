@@ -1,8 +1,12 @@
 import makeWASocket, {
-import { config } from './config.js';
   useMultiFileAuthState,
   DisconnectReason
 } from '@whiskeysockets/baileys';
+
+import { config } from './config.js';
+
+import qrcode from 'qrcode-terminal';
+import pino from 'pino';
 
 import qrcode from 'qrcode-terminal';
 import pino from 'pino';
