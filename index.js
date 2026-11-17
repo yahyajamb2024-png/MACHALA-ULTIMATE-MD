@@ -13,10 +13,18 @@ const PREFIX = config.prefix;
 const BOT_NAME = config.botName;
 
 const ADMIN_COMMANDS = [
-  'admin', 'add', 'kick', 'promote',
-  'demote', 'block', 'unblock',
-  'tagall', 'hidetag', 'mute',
-  'unmute', 'groupinfo'
+  'admin',
+  'add',
+  'kick',
+  'promote',
+  'demote',
+  'block',
+  'unblock',
+  'tagall',
+  'hidetag',
+  'mute',
+  'unmute',
+  'groupinfo'
 ];
 
 async function startBot() {
@@ -36,23 +44,23 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log('SCAN QR CODE WITH WHATSAPP');
+      console.log('\nSCAN THIS QR CODE WITH WHATSAPP\n');
       qrcode.generate(qr, { small: true });
     }
 
     if (connection === 'open') {
-      console.log(`${BOT_NAME} CONNECTED!`);
+      console.log(`${BOT_NAME} CONNECTED SUCCESSFULLY!`);
     }
 
     if (connection === 'close') {
-      const status =
+      const statusCode =
         lastDisconnect?.error?.output?.statusCode;
 
-      if (status !== DisconnectReason.loggedOut) {
+      if (statusCode !== DisconnectReason.loggedOut) {
         console.log('Reconnecting...');
-        startBot().catch(console.error);
+        startBot();
       } else {
-        console.log('WhatsApp session logged out.');
+        console.log('Session logged out. Scan a new QR code.');
       }
     }
   });
@@ -69,19 +77,17 @@ async function startBot() {
         msg.message.conversation ||
         msg.message.extendedTextMessage?.text ||
         msg.message.imageMessage?.caption ||
+        msg.message.videoMessage?.caption ||
         '';
 
       if (!message.startsWith(PREFIX)) continue;
 
-      const args = message.slice(PREFIX.length)
-        .trim().split(/\s+/);
-
+      const args = message.slice(PREFIX.length).trim().split(/\s+/);
       const command = args.shift()?.toLowerCase();
 
       if (!command) continue;
 
       try {
-
         if (ADMIN_COMMANDS.includes(command)) {
           await handleAdminCommand(
             sock,
@@ -94,16 +100,18 @@ async function startBot() {
         }
 
         switch (command) {
-
           case 'menu':
             await sock.sendMessage(jid, {
-              text: `
-╭━━━━━━━━━━━━━━━━━━━━╮
-     🤖 ${BOT_NAME}
-╰━━━━━━━━━━━━━━━━━━━━╯
+              text:
+`╭━━━━━━━━━━━━━━━━━━╮
+      🤖 ${BOT_NAME}
+╰━━━━━━━━━━━━━━━━━━╯
 
 👑 OWNER
 .owner
+
+⚙️ BASIC COMMANDS
+.menu
 .alive
 .ping
 
@@ -113,35 +121,24 @@ async function startBot() {
 .kick
 .promote
 .demote
-.block
-.unblock
 .tagall
 .hidetag
 .mute
 .unmute
 .groupinfo
 
-🎨 MEDIA
-.sticker
-.toimg
+🎨 MEDIA TOOLS
 .vv
 
-⚙️ AUTOMATION
-.autoread
-.autoreact
-.welcome
-.goodbye
-
-╭━━━━━━━━━━━━━━━━━━━━╮
-       POWERED BY MACHALA
-╰━━━━━━━━━━━━━━━━━━━━╯
-`
+╭━━━━━━━━━━━━━━━━━━╮
+     POWERED BY MACHALA
+╰━━━━━━━━━━━━━━━━━━╯`
             });
             break;
 
           case 'alive':
             await sock.sendMessage(jid, {
-              text: `✅ ${BOT_NAME} is online!`
+              text: `✅ ${BOT_NAME} is online and running!`
             });
             break;
 
@@ -153,21 +150,21 @@ async function startBot() {
 
           case 'owner':
             await sock.sendMessage(jid, {
-              text: `👑 Owner: ${config.ownerName}`
+              text: `👑 Bot Owner: ${config.ownerName}`
             });
             break;
 
           case 'vv':
+          case 'vv2':
             await sock.sendMessage(jid, {
-              text: '👁️ View Once privacy is respected. Eligible media you own or have permission to retain can be handled separately.'
+              text: '👁️ View Once media is protected. I can help manage media you own or have permission to retain.'
             });
             break;
 
           default:
             await sock.sendMessage(jid, {
-              text: '❌ Unknown command. Type .menu'
+              text: '❌ Unknown command. Type .menu to see available commands.'
             });
-
         }
 
       } catch (error) {
@@ -177,4 +174,6 @@ async function startBot() {
   });
 }
 
-startBot().catch(console.error);
+startBot().catch(error => {
+  console.error('Bot startup error:', error);
+});
