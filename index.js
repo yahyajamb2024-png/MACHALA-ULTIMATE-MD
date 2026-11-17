@@ -4,6 +4,7 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 
 import { config } from './config.js';
+import { handleAdminCommand } from './admin.js';
 
 import qrcode from 'qrcode-terminal';
 import pino from 'pino';
@@ -73,6 +74,31 @@ async function startBot() {
 
       try {
         switch (command) {
+            const adminCommands = [
+  'admin',
+  'add',
+  'kick',
+  'promote',
+  'demote',
+  'block',
+  'unblock',
+  'tagall',
+  'hidetag',
+  'mute',
+  'unmute',
+  'groupinfo'
+];
+
+if (adminCommands.includes(command)) {
+  await handleAdminCommand(
+    sock,
+    msg,
+    command,
+    args,
+    config
+  );
+  continue;
+}
 
           case 'menu':
             await sock.sendMessage(jid, {
