@@ -5,26 +5,15 @@ import makeWASocket, {
 
 import { config } from './config.js';
 import { handleAdminCommand } from './admin.js';
-
-import qrcode from 'qrcode-terminal';
 import pino from 'pino';
 
 const PREFIX = config.prefix;
 const BOT_NAME = config.botName;
 
 const ADMIN_COMMANDS = [
-  'admin',
-  'add',
-  'kick',
-  'promote',
-  'demote',
-  'block',
-  'unblock',
-  'tagall',
-  'hidetag',
-  'mute',
-  'unmute',
-  'groupinfo'
+  'admin', 'add', 'kick', 'promote', 'demote',
+  'block', 'unblock', 'tagall', 'hidetag',
+  'mute', 'unmute', 'groupinfo'
 ];
 
 async function startBot() {
@@ -40,12 +29,36 @@ async function startBot() {
 
   sock.ev.on('creds.update', saveCreds);
 
+  let pairingRequested = false;
+
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
-    if (qr) {
-      console.log('\nSCAN THIS QR CODE WITH WHATSAPP\n');
-      qrcode.generate(qr, { small: true });
+    if (qr && !state.creds.registered && !pairingRequested) {
+      pairingRequested = true;
+
+      try {
+        const phoneNumber = (config.ownerNumber || '')
+          .replace(/\D/g, '');
+
+        if (!phoneNumber) {
+          console.log('ERROR: Set OWNER_NUMBER in Render Environment.');
+          return;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        const code = await sock.requestPairingCode(phoneNumber);
+
+        console.log('================================');
+        console.log('MACHALA ULTIMATE PAIRING CODE');
+        console.log(code);
+        console.log('================================');
+
+      } catch (error) {
+        pairingRequested = false;
+        console.error('Pairing error:', error);
+      }
     }
 
     if (connection === 'open') {
@@ -60,7 +73,7 @@ async function startBot() {
         console.log('Reconnecting...');
         startBot();
       } else {
-        console.log('Session logged out. Scan a new QR code.');
+        console.log('WhatsApp session logged out.');
       }
     }
   });
@@ -90,11 +103,7 @@ async function startBot() {
       try {
         if (ADMIN_COMMANDS.includes(command)) {
           await handleAdminCommand(
-            sock,
-            msg,
-            command,
-            args,
-            config
+            sock, msg, command, args, config
           );
           continue;
         }
@@ -104,7 +113,7 @@ async function startBot() {
             await sock.sendMessage(jid, {
               text:
 `╭━━━━━━━━━━━━━━━━━━╮
-      🤖 ${BOT_NAME}
+     🤖 ${BOT_NAME}
 ╰━━━━━━━━━━━━━━━━━━╯
 
 👑 OWNER
@@ -138,7 +147,7 @@ async function startBot() {
 
           case 'alive':
             await sock.sendMessage(jid, {
-              text: `✅ ${BOT_NAME} is online and running!`
+              text: `✅ ${BOT_NAME} is online!`
             });
             break;
 
@@ -157,13 +166,13 @@ async function startBot() {
           case 'vv':
           case 'vv2':
             await sock.sendMessage(jid, {
-              text: '👁️ View Once media is protected. I can help manage media you own or have permission to retain.'
+              text: '👁️ View Once media is protected. I can help with media you own or have permission to retain.'
             });
             break;
 
           default:
             await sock.sendMessage(jid, {
-              text: '❌ Unknown command. Type .menu to see available commands.'
+              text: '❌ Unknown command. Type .menu'
             });
         }
 
@@ -174,6 +183,4 @@ async function startBot() {
   });
 }
 
-startBot().catch(error => {
-  console.error('Bot startup error:', error);
-});
+startBot().catch(console.error);
