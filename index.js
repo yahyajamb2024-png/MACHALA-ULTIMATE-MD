@@ -1,4 +1,5 @@
 import makeWASocket, {
+import { config } from './config.js';
   useMultiFileAuthState,
   DisconnectReason
 } from '@whiskeysockets/baileys';
@@ -6,8 +7,8 @@ import makeWASocket, {
 import qrcode from 'qrcode-terminal';
 import pino from 'pino';
 
-const PREFIX = '.';
-const BOT_NAME = 'MACHALA ULTIMATE';
+const PREFIX = config.prefix;
+const BOT_NAME = config.botName;
 
 async function startBot() {
   const { state, saveCreds } =
@@ -76,11 +77,7 @@ async function startBot() {
      🤖 ${BOT_NAME}
 ╰━━━━━━━━━━━━━━━━━━╯
 
-👑 OWNER COMMANDS
-.alive
-.ping
-.owner
-.menu
+text: `👑 Bot Owner: ${config.ownerName}`
 
 👥 GROUP MANAGEMENT
 .admin
