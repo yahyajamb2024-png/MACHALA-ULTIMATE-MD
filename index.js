@@ -9,11 +9,15 @@ import { handleAdminCommand } from './admin.js';
 import qrcode from 'qrcode-terminal';
 import pino from 'pino';
 
-import qrcode from 'qrcode-terminal';
-import pino from 'pino';
-
 const PREFIX = config.prefix;
 const BOT_NAME = config.botName;
+
+const ADMIN_COMMANDS = [
+  'admin', 'add', 'kick', 'promote',
+  'demote', 'block', 'unblock',
+  'tagall', 'hidetag', 'mute',
+  'unmute', 'groupinfo'
+];
 
 async function startBot() {
   const { state, saveCreds } =
@@ -32,23 +36,23 @@ async function startBot() {
     const { connection, lastDisconnect, qr } = update;
 
     if (qr) {
-      console.log('\nSCAN THIS QR CODE WITH WHATSAPP\n');
+      console.log('SCAN QR CODE WITH WHATSAPP');
       qrcode.generate(qr, { small: true });
     }
 
     if (connection === 'open') {
-      console.log(`${BOT_NAME} CONNECTED SUCCESSFULLY!`);
+      console.log(`${BOT_NAME} CONNECTED!`);
     }
 
     if (connection === 'close') {
-      const statusCode =
+      const status =
         lastDisconnect?.error?.output?.statusCode;
 
-      if (statusCode !== DisconnectReason.loggedOut) {
+      if (status !== DisconnectReason.loggedOut) {
         console.log('Reconnecting...');
-        startBot();
+        startBot().catch(console.error);
       } else {
-        console.log('Session logged out. Scan a new QR code.');
+        console.log('WhatsApp session logged out.');
       }
     }
   });
@@ -69,45 +73,39 @@ async function startBot() {
 
       if (!message.startsWith(PREFIX)) continue;
 
-      const args = message.slice(1).trim().split(/\s+/);
+      const args = message.slice(PREFIX.length)
+        .trim().split(/\s+/);
+
       const command = args.shift()?.toLowerCase();
 
-      try {
-        switch (command) {
-            const adminCommands = [
-  'admin',
-  'add',
-  'kick',
-  'promote',
-  'demote',
-  'block',
-  'unblock',
-  'tagall',
-  'hidetag',
-  'mute',
-  'unmute',
-  'groupinfo'
-];
+      if (!command) continue;
 
-if (adminCommands.includes(command)) {
-  await handleAdminCommand(
-    sock,
-    msg,
-    command,
-    args,
-    config
-  );
-  continue;
-}
+      try {
+
+        if (ADMIN_COMMANDS.includes(command)) {
+          await handleAdminCommand(
+            sock,
+            msg,
+            command,
+            args,
+            config
+          );
+          continue;
+        }
+
+        switch (command) {
 
           case 'menu':
             await sock.sendMessage(jid, {
               text: `
-╭━━━━━━━━━━━━━━━━━━╮
+╭━━━━━━━━━━━━━━━━━━━━╮
      🤖 ${BOT_NAME}
-╰━━━━━━━━━━━━━━━━━━╯
+╰━━━━━━━━━━━━━━━━━━━━╯
 
-text: `👑 Bot Owner: ${config.ownerName}`
+👑 OWNER
+.owner
+.alive
+.ping
 
 👥 GROUP MANAGEMENT
 .admin
@@ -115,36 +113,35 @@ text: `👑 Bot Owner: ${config.ownerName}`
 .kick
 .promote
 .demote
+.block
+.unblock
 .tagall
 .hidetag
 .mute
 .unmute
 .groupinfo
 
+🎨 MEDIA
+.sticker
+.toimg
+.vv
+
 ⚙️ AUTOMATION
 .autoread
 .autoreact
 .welcome
 .goodbye
-.antilink
-.antispam
 
-🎨 MEDIA TOOLS
-.sticker
-.toimg
-.save
-.vv
-
-╭━━━━━━━━━━━━━━━━━━╮
+╭━━━━━━━━━━━━━━━━━━━━╮
        POWERED BY MACHALA
-╰━━━━━━━━━━━━━━━━━━╯
+╰━━━━━━━━━━━━━━━━━━━━╯
 `
             });
             break;
 
           case 'alive':
             await sock.sendMessage(jid, {
-              text: `✅ ${BOT_NAME} is online and running!`
+              text: `✅ ${BOT_NAME} is online!`
             });
             break;
 
@@ -156,22 +153,23 @@ text: `👑 Bot Owner: ${config.ownerName}`
 
           case 'owner':
             await sock.sendMessage(jid, {
-              text: '👑 Bot Owner: MACHALA'
+              text: `👑 Owner: ${config.ownerName}`
             });
             break;
 
           case 'vv':
-          case 'vv2':
             await sock.sendMessage(jid, {
-              text: '👁️ View Once media is protected. I can help save media you own or have permission to retain.'
+              text: '👁️ View Once privacy is respected. Eligible media you own or have permission to retain can be handled separately.'
             });
             break;
 
           default:
             await sock.sendMessage(jid, {
-              text: '❌ Unknown command. Type .menu to see available commands.'
+              text: '❌ Unknown command. Type .menu'
             });
+
         }
+
       } catch (error) {
         console.error('Command error:', error);
       }
