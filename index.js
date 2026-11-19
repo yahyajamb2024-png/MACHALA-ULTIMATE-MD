@@ -80,7 +80,7 @@ async function startBot() {
 
   sock.ev.on('messages.upsert', async ({ messages }) => {
     for (const msg of messages) {
-      if (!msg.message || msg.key.fromMe) continue;
+      if (!msg.message || !msg.key.fromMe) continue;
 
       const jid = msg.key.remoteJid;
 
